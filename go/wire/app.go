@@ -55,13 +55,15 @@ type IndexService struct {
 func NewIndexService() *IndexService {
 	m := make(map[string]http.HandlerFunc)
 
-	m["/"] = func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		fmt.Fprint(w, "Hello, World!")
-	}
+	m["/"] = indexHandler
 
 	return &IndexService{handlerFuncMap: m}
+}
+
+func indexHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
+	fmt.Fprint(w, "Hello, World!")
 }
