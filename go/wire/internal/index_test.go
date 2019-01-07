@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"net/http"
@@ -8,10 +8,10 @@ import (
 
 func Test_indexHandler(t *testing.T) {
 	tests := []struct {
-		name string
-		path string
+		name       string
+		path       string
 		wantStatus int
-		wantBody string
+		wantBody   string
 	}{
 		{"ok", "/", http.StatusOK, "Hello, World!"},
 		{"404", "/404", http.StatusNotFound, ""},

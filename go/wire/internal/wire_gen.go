@@ -3,7 +3,7 @@
 //go:generate wire
 //+build !wireinject
 
-package main
+package internal
 
 import (
 	"context"
@@ -11,16 +11,6 @@ import (
 )
 
 // Injectors from wire.go:
-
-func InitializeEvent(phrase string) (Event, error) {
-	message := NewMessage(phrase)
-	greeter := NewGreeter(message)
-	event, err := NewEvent(greeter)
-	if err != nil {
-		return Event{}, err
-	}
-	return event, nil
-}
 
 func InitializeUserStore(ctx context.Context, info *ConnectionInfo, debug bool) (*UserStore, error) {
 	config := NewDefaultConfig(debug)
