@@ -29,5 +29,5 @@ func main() {
 		log.Printf("Defaulting to port %s", port)
 	}
 	log.Printf("Listening on port %s", port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), server))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf("localhost:%s", port), server))
 }
