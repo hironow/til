@@ -17,10 +17,10 @@ func NewIndexService() *IndexService {
 }
 
 func (i *IndexService) SetRouter(r *mux.Router) {
-	r.HandleFunc("/", indexHandler).Methods("GET")
+	r.HandleFunc("/", i.indexHandler).Methods("GET")
 }
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
+func (i *IndexService) indexHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, "Hello, World!")
 }
