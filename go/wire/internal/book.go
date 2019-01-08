@@ -119,7 +119,7 @@ func NewBookService(userStore *UserStore, bookStore *BookStore) *BookService {
 
 func (b *BookService) SetRouter(r *mux.Router) {
 	r.HandleFunc("/users/{userID}/books", b.booksHandler).Methods("GET", "POST")
-	r.HandleFunc("/users/{userID}/books/{bookID}", b.bookHandler).Methods("GET")
+	r.HandleFunc("/users/{userID}/books/{bookID}", b.bookHandler).Methods("GET", "DELETE")
 }
 
 func (b *BookService) booksHandler(w http.ResponseWriter, r *http.Request) {
@@ -182,20 +182,45 @@ func (b *BookService) bookHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	ctx := r.Context()
 
-	user, err := b.userStore.Get(ctx, UserID(vars["userID"]))
-	if err != nil {
-		fmt.Fprintf(w, "get user error: %#v", err)
+	switch r.Method {
+	case "GET":
+		user, err := b.userStore.Get(ctx, UserID(vars["userID"]))
+		if err != nil {
+			fmt.Fprintf(w, "get user error: %#v", err)
+			return
+		}
+		fmt.Fprintf(w, "User: %#v\n", user)
+
+		book, err := b.bookStore.Get(ctx, user, BookID(vars["bookID"]))
+		if err != nil {
+			fmt.Fprintf(w, "get book error: %#v", err)
+			return
+		}
+		fmt.Fprintf(w, "Book: %#v\n", book)
+
+		w.WriteHeader(http.StatusOK)
+		return
+	case "DELETE":
+		user, err := b.userStore.Get(ctx, UserID(vars["userID"]))
+		if err != nil {
+			fmt.Fprintf(w, "get user error: %#v", err)
+			return
+		}
+		fmt.Fprintf(w, "User: %#v\n", user)
+
+		book, err := b.bookStore.Get(ctx, user, BookID(vars["bookID"]))
+		if err != nil {
+			fmt.Fprintf(w, "get book error: %#v", err)
+			return
+		}
+
+		err = b.bookStore.Delete(ctx, user, book.ID)
+		if err != nil {
+			fmt.Fprintf(w, "delete book error: %#v", err)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
 		return
 	}
-	fmt.Fprintf(w, "User: %#v\n", user)
-
-	book, err := b.bookStore.Get(ctx, user, BookID(vars["bookID"]))
-	if err != nil {
-		fmt.Fprintf(w, "get book error: %#v", err)
-		return
-	}
-	fmt.Fprintf(w, "Book: %#v\n", book)
-
-	w.WriteHeader(http.StatusOK)
-	return
 }

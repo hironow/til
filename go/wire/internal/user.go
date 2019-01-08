@@ -117,7 +117,7 @@ func NewUserService(userStore *UserStore) *UserService {
 
 func (u *UserService) SetRouter(r *mux.Router) {
 	r.HandleFunc("/users", u.usersHandler).Methods("GET", "POST")
-	r.HandleFunc("/users/{userID}", u.userHandler).Methods("GET")
+	r.HandleFunc("/users/{userID}", u.userHandler).Methods("GET", "DELETE")
 }
 
 func (u *UserService) usersHandler(w http.ResponseWriter, r *http.Request) {
@@ -165,13 +165,32 @@ func (u *UserService) userHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	ctx := r.Context()
 
-	user, err := u.userStore.Get(ctx, UserID(vars["userID"]))
-	if err != nil {
-		fmt.Fprintf(w, "get user error: %#v", err)
+	switch r.Method {
+	case "GET":
+		user, err := u.userStore.Get(ctx, UserID(vars["userID"]))
+		if err != nil {
+			fmt.Fprintf(w, "get user error: %#v", err)
+			return
+		}
+		fmt.Fprintf(w, "User: %#v\n", user)
+
+		w.WriteHeader(http.StatusOK)
+		return
+	case "DELETE":
+		user, err := u.userStore.Get(ctx, UserID(vars["userID"]))
+		if err != nil {
+			fmt.Fprintf(w, "get user error: %#v", err)
+			return
+		}
+		fmt.Fprintf(w, "User: %#v\n", user)
+
+		err = u.userStore.Delete(ctx, user.ID)
+		if err != nil {
+			fmt.Fprintf(w, "delete user error: %#v", err)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
 		return
 	}
-	fmt.Fprintf(w, "User: %#v\n", user)
-
-	w.WriteHeader(http.StatusOK)
-	return
 }
