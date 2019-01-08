@@ -1,19 +1,15 @@
 package internal
 
-import "net/http"
+import (
+	"github.com/gorilla/mux"
+)
 
-func NewServer(indexService *IndexService, userService *UserService, bookService *BookService) *http.ServeMux {
-	mux := http.NewServeMux()
+func NewServer(indexService *IndexService, userService *UserService, bookService *BookService) *mux.Router {
+	router := mux.NewRouter().StrictSlash(true)
 
-	for pattern, handlerFunc := range indexService.handlerFuncMap {
-		mux.Handle(pattern, handlerFunc)
-	}
-	for pattern, handlerFunc := range userService.handlerFuncMap {
-		mux.Handle(pattern, handlerFunc)
-	}
-	for pattern, handlerFunc := range bookService.handlerFuncMap {
-		mux.Handle(pattern, handlerFunc)
-	}
+	indexService.SetRouter(router)
+	userService.SetRouter(router)
+	bookService.SetRouter(router)
 
-	return mux
+	return router
 }

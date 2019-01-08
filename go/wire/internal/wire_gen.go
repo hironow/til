@@ -7,7 +7,7 @@ package internal
 
 import (
 	"context"
-	"net/http"
+	"github.com/gorilla/mux"
 )
 
 // Injectors from wire.go:
@@ -32,7 +32,7 @@ func InitializeBookStore(ctx context.Context, info *ConnectionInfo, debug bool) 
 	return bookStore, nil
 }
 
-func InitializeServer(ctx context.Context, info *ConnectionInfo, debug bool) (*http.ServeMux, error) {
+func InitializeServer(ctx context.Context, info *ConnectionInfo, debug bool) (*mux.Router, error) {
 	indexService := NewIndexService()
 	config := NewDefaultConfig(debug)
 	client, err := NewClient(ctx, info)
@@ -43,6 +43,6 @@ func InitializeServer(ctx context.Context, info *ConnectionInfo, debug bool) (*h
 	userService := NewUserService(userStore)
 	bookStore := NewBookStore(config, client)
 	bookService := NewBookService(userStore, bookStore)
-	serveMux := NewServer(indexService, userService, bookService)
-	return serveMux, nil
+	router := NewServer(indexService, userService, bookService)
+	return router, nil
 }

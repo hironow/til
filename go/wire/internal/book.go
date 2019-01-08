@@ -2,10 +2,12 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 
 	"cloud.google.com/go/datastore"
+	"github.com/gorilla/mux"
 	"github.com/satori/go.uuid"
 	"google.golang.org/api/iterator"
 )
@@ -56,7 +58,7 @@ func (b *BookStore) Get(ctx context.Context, user *User, id BookID) (*Book, erro
 	err := b.client.Get(ctx, GenerateBookKey(user, id), &book)
 
 	if b.debug {
-		log.Printf("Book: %+v", book)
+		log.Printf("Book: %#v", book)
 	}
 
 	return &book, err
@@ -97,7 +99,7 @@ func (b *BookStore) List(ctx context.Context, user *User, cursorString string) (
 
 	if b.debug {
 		for i, book := range books {
-			log.Printf("#%d Book: %+v", i, book)
+			log.Printf("#%d Book: %#v", i, book)
 		}
 	}
 
@@ -107,16 +109,93 @@ func (b *BookStore) List(ctx context.Context, user *User, cursorString string) (
 // Service
 
 type BookService struct {
-	handlerFuncMap map[string]http.HandlerFunc
+	userStore *UserStore
+	bookStore *BookStore
 }
 
 func NewBookService(userStore *UserStore, bookStore *BookStore) *BookService {
-	m := make(map[string]http.HandlerFunc)
+	return &BookService{userStore: userStore, bookStore: bookStore}
+}
 
-	// TODO: users/xxx/books/yyy
-	m["/books/"] = func(w http.ResponseWriter, r *http.Request) {
-		//ctx := r.Context()
+func (b *BookService) SetRouter(r *mux.Router) {
+	r.HandleFunc("/users/{userID}/books", b.booksHandler).Methods("GET", "POST")
+	r.HandleFunc("/users/{userID}/books/{bookID}", b.bookHandler).Methods("GET")
+}
+
+func (b *BookService) booksHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	ctx := r.Context()
+
+	switch r.Method {
+	case "GET":
+		user, err := b.userStore.Get(ctx, UserID(vars["userID"]))
+		if err != nil {
+			fmt.Fprintf(w, "get user error: %#v", err)
+			return
+		}
+		fmt.Fprintf(w, "User: %#v\n", user)
+
+		books, err := b.bookStore.List(ctx, user, "")
+		if err != nil {
+			fmt.Fprintf(w, "get book list error: %#v", err)
+			return
+		}
+		if len(books) == 0 {
+			fmt.Fprint(w, "no books!")
+		}
+
+		for i, book := range books {
+			fmt.Fprintf(w, "#%d Book: %#v\n", i, book)
+		}
+
+		w.WriteHeader(http.StatusOK)
+		return
+	case "POST":
+		bookName := r.FormValue("name")
+
+		user, err := b.userStore.Get(ctx, UserID(vars["userID"]))
+		if err != nil {
+			fmt.Fprintf(w, "get user error: %#v", err)
+			return
+		}
+		fmt.Fprintf(w, "User: %#v\n", user)
+
+		book, err := NewBook(user, bookName)
+		if err != nil {
+			fmt.Fprintf(w, "create book error: %#v", err)
+			return
+		}
+
+		err = b.bookStore.Put(ctx, user, book)
+		if err != nil {
+			fmt.Fprintf(w, "create book error: %#v", err)
+			return
+		}
+		fmt.Fprintf(w, "Book: %#v\n", book)
+
+		w.WriteHeader(http.StatusOK)
+		return
 	}
+}
 
-	return &BookService{handlerFuncMap: m}
+func (b *BookService) bookHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	ctx := r.Context()
+
+	user, err := b.userStore.Get(ctx, UserID(vars["userID"]))
+	if err != nil {
+		fmt.Fprintf(w, "get user error: %#v", err)
+		return
+	}
+	fmt.Fprintf(w, "User: %#v\n", user)
+
+	book, err := b.bookStore.Get(ctx, user, BookID(vars["bookID"]))
+	if err != nil {
+		fmt.Fprintf(w, "get book error: %#v", err)
+		return
+	}
+	fmt.Fprintf(w, "Book: %#v\n", book)
+
+	w.WriteHeader(http.StatusOK)
+	return
 }

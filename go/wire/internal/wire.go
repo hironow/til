@@ -4,9 +4,9 @@ package internal
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/google/wire"
+	"github.com/gorilla/mux"
 )
 
 func InitializeUserStore(ctx context.Context, info *ConnectionInfo, debug bool) (*UserStore, error) {
@@ -19,11 +19,11 @@ func InitializeBookStore(ctx context.Context, info *ConnectionInfo, debug bool) 
 	return &BookStore{}, nil
 }
 
-func InitializeServer(ctx context.Context, info *ConnectionInfo, debug bool) (*http.ServeMux, error) {
+func InitializeServer(ctx context.Context, info *ConnectionInfo, debug bool) (*mux.Router, error) {
 	wire.Build(
 		NewServer,
 		NewIndexService, NewUserService, NewBookService,
 		NewUserStore, NewBookStore,
 		NewClient, NewDefaultConfig)
-	return &http.ServeMux{}, nil
+	return &mux.Router{}, nil
 }

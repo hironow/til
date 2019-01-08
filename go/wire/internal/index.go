@@ -3,26 +3,24 @@ package internal
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 // Service
 
 type IndexService struct {
-	handlerFuncMap map[string]http.HandlerFunc
 }
 
 func NewIndexService() *IndexService {
-	m := make(map[string]http.HandlerFunc)
+	return &IndexService{}
+}
 
-	m["/"] = indexHandler
-
-	return &IndexService{handlerFuncMap: m}
+func (i *IndexService) SetRouter(r *mux.Router) {
+	r.HandleFunc("/", indexHandler).Methods("GET")
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		http.NotFound(w, r)
-		return
-	}
+	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, "Hello, World!")
 }
