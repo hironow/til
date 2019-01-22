@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"./internal"
+	"wire/internal"
 )
 
 func main() {

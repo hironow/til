@@ -14,7 +14,7 @@ func Test_indexHandler(t *testing.T) {
 		wantBody   string
 	}{
 		{"ok", "/", http.StatusOK, "Hello, World!"},
-		{"404", "/404", http.StatusNotFound, ""},
+		{"404", "/404", http.StatusOK, "Hello, World!"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -24,17 +24,15 @@ func Test_indexHandler(t *testing.T) {
 			}
 
 			rr := httptest.NewRecorder()
-			handler := http.HandlerFunc(indexHandler)
+			handler := http.HandlerFunc(NewIndexService().indexHandler)
 			handler.ServeHTTP(rr, req)
 
 			if got, want := rr.Code, tt.wantStatus; got != want {
 				t.Errorf("unexpected status: got: %+v, want: %+v", got, want)
 			}
 
-			if tt.wantBody != "" {
-				if got, want := rr.Body.String(), tt.wantBody; got != want {
-					t.Errorf("unexpected body: got: %+v, want: %+v", got, want)
-				}
+			if got, want := rr.Body.String(), tt.wantBody; got != want {
+				t.Errorf("unexpected body: got: %+v, want: %+v", got, want)
 			}
 		})
 	}
